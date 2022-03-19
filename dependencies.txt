@@ -1,0 +1,7 @@
+coverage
+pandas
+pandas-ta
+PyStore
+requests
+requests-mock
+websocket-client
