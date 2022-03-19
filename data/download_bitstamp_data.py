@@ -12,6 +12,7 @@ import pystore
 import requests
 
 from data.settings import BITSTAMP_PYSTORE_PATH, PYSTORE_STORE, PYSTORE_COLLECTION, BITSTAMP_TRADING_PAIRS, PYSTORE_COLLECTION_SANITIZED
+from util.base_command import BaseCommand
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -19,11 +20,7 @@ STEP = 60
 LIMIT = 1000
 
 
-class DownloadBitstampData:
-
-    def __init__(self):
-        super().__init__()
-        self.logger = logging.getLogger(self.__class__.__name__)
+class DownloadBitstampData(BaseCommand):
 
     def run(self, *args, **options):
         Path(BITSTAMP_PYSTORE_PATH).mkdir(parents=True, exist_ok=True)
@@ -35,14 +32,14 @@ class DownloadBitstampData:
         collection_sanitized = store.collection(PYSTORE_COLLECTION_SANITIZED)
 
         for pair in BITSTAMP_TRADING_PAIRS:
-            print('')
-            print('###############################################################################')
-            print(f'Processing {pair}')
+            self.logger.info('')
+            self.logger.info('###############################################################################')
+            self.logger.info(f'Processing {pair}')
 
             ############################################################################################################
             # Get all data available for that pair
             ############################################################################################################
-            print(f'Getting data for {pair}')
+            self.logger.info(f'Getting data for {pair}')
 
             exists = pair in collection.list_items()
             if not exists:
@@ -53,7 +50,7 @@ class DownloadBitstampData:
             while start < datetime.today().timestamp() - 3600:
                 try:
                     url = f'https://www.bitstamp.net/api/v2/ohlc/{pair}/?step={STEP}&start={start}&limit=1000'
-                    print(f'{pair} - {datetime.fromtimestamp(start)} - {url}')
+                    self.logger.info(f'{pair} - {datetime.fromtimestamp(start)} - {url}')
                     response = requests.get(url)
                     assert response.status_code == 200
                     response_data = json.loads(response.text)['data']['ohlc']
@@ -77,32 +74,32 @@ class DownloadBitstampData:
                         exists = True
                     start = int(df.index[-1].to_pydatetime().timestamp())
                 except Exception:
-                    print("Unexpected error:", sys.exc_info()[0])
+                    self.logger.error("Unexpected error:", sys.exc_info()[0])
                     time.sleep(10)
 
             ############################################################################################################
             # Sanitize and validate the data
             ############################################################################################################
 
-            print(f'Sanitizing data for {pair}')
+            self.logger.info(f'Sanitizing data for {pair}')
             df = collection.item(pair).to_pandas()
 
             df = df.reindex(pandas.date_range(df.index[0], df.index[-1], freq='1min'), fill_value=None)
             df[['volume']] = df[['volume']].fillna(value=0)
 
-            print(f'Validating data for {pair}')
+            self.logger.info(f'Validating data for {pair}')
 
             # Does it have any gaps?
             deltas = df.index.to_series().diff()[1:]
             gaps = deltas[deltas > timedelta(minutes=1)]
-            print(gaps.tail())
+            self.logger.info(gaps.tail())
             if len(gaps) > 0:
-                self.print_error(f'There are gaps in {pair}')
+                self.self.logger.error(f'There are gaps in {pair}')
                 exit(9)
 
             # Does it have any NaN values in volume?
             if df['volume'].isnull().sum().sum() > 0:
-                self.print_error(f'There are NaN values in {pair}')
+                self.self.logger.error(f'There are NaN values in {pair}')
                 exit(9)
 
             exists = pair in collection_sanitized.list_items()
@@ -110,15 +107,6 @@ class DownloadBitstampData:
                 collection_sanitized.append(pair, df)
             else:
                 collection_sanitized.write(pair, df)
-
-    def print_error(self, msg):
-        print()
-        print()
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        print('!!! ERROR')
-        print(f'!!! {msg}')
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        print()
 
 
 if __name__ == "__main__":
