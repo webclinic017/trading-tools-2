@@ -68,8 +68,8 @@ class DualMomentumBitstamp1(BaseCommand):
         ath = 1
         ath_btc = 1
         max_drawdown = []
-        hodl_btc = 1
-        hodl_eth = 1
+        hodl_btc = None
+        hodl_eth = None
         long = None
         last_long = None
         statistics = {'transactions': 0, 'holdings': {}}
@@ -77,11 +77,17 @@ class DualMomentumBitstamp1(BaseCommand):
         data[lead] = data[lead][data[lead].index >= np.datetime64('today') - np.timedelta64(365, 'D')]
 
         for index in data[lead].index:
-            next_hodl_btc = data['btcusd'].loc[index]['close'] / data['btcusd'].loc[index]['open'] * hodl_btc
-            hodl_btc = next_hodl_btc if not math.isnan(next_hodl_btc) else hodl_btc
+            if hodl_btc is not None:
+                next_hodl_btc = data['btcusd'].loc[index]['close'] / data['btcusd'].loc[index]['open'] * hodl_btc
+                hodl_btc = next_hodl_btc if not math.isnan(next_hodl_btc) else hodl_btc
+            else:
+                hodl_btc = 1
 
-            if index in data['ethusd'].index:
-                hodl_eth = data['ethusd'].loc[index]['close'] / data['ethusd'].loc[index]['open'] * hodl_eth or hodl_eth
+            if hodl_eth is not None:
+                if index in data['ethusd'].index:
+                    hodl_eth = data['ethusd'].loc[index]['close'] / data['ethusd'].loc[index]['open'] * hodl_eth or hodl_eth
+            else:
+                hodl_eth = 1
 
             if long is not None:
                 equity = data[long].loc[index]['close'] / data[long].loc[index]['open'] * equity
