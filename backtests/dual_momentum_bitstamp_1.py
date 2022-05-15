@@ -138,7 +138,7 @@ class DualMomentumBitstamp1(BaseCommand):
                 if index in data[pair].index:
                     roc = data[pair].loc[index]['roc']
                     std = data[pair].loc[index]['std_pct']
-                    if std <= std_max_vol * 1.05 and roc > 0 and roc > long_roc:
+                    if std <= std_max_vol * 1.05 and roc > 0.01 and roc > long_roc:
                         long_roc = roc
                         long = pair
 
