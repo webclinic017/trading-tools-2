@@ -25,6 +25,9 @@ class BitstampClient:
     def getTicker(self, pair):
         return self._restClient.unauthenticated_get_request(f'api/v2/ticker/{pair}/').json()
 
+    def getHourlyTicker(self, pair):
+        return self._restClient.unauthenticated_get_request(f'api/v2/ticker_hour/{pair}/').json()
+
     def getOpenOrders(self):
         return self._restClient.request('api/v2/open_orders/all/', None).json()
 
@@ -32,7 +35,7 @@ class BitstampClient:
         return self._restClient.request('api/v2/cancel_order/', {'id': id}).json()
 
     def cancelAllOrders(self):
-        return self._restClient.request('api/cancel_all_orders/', None).json()
+        return self._restClient.request('api/v2/cancel_all_orders/', None).json()
 
     def buyLimit(self, pair, price, amount):
         return self._restClient.request(f'api/v2/buy/{pair}/', {'price': price, 'amount': amount}).json()
