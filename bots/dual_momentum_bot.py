@@ -119,11 +119,16 @@ coin_of_the_week = evaluate_coin_of_the_week(bitstamp_client)
 while running:
     now = datetime.now()
 
-    if now.weekday() == 6 and last.weekday() == 5:
-        coin_of_the_week = evaluate_coin_of_the_week(bitstamp_client)
+    try:
+        if now.weekday() == 6 and last.weekday() == 5:
+            coin_of_the_week = evaluate_coin_of_the_week(bitstamp_client)
 
-    if now.minute % 5 == 0 and now.minute != last.minute:
-        reset_orders(bitstamp_client, coin_of_the_week)
+        if now.minute % 5 == 0 and now.minute != last.minute:
+            reset_orders(bitstamp_client, coin_of_the_week)
 
-    last = now
+        last = now
+
+    except Exception:
+        log.exception()
+
     sleep(1)
