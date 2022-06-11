@@ -73,7 +73,7 @@ def evaluate_coin_of_the_week(client: BitstampClient) -> str:
 
 
 def reset_orders(client: BitstampClient, coin_long: str):
-    log.info(f'Resetting orders: {datetime.now()}')
+    log.info(f'Resetting orders, coin of the week is {coin_long}: {datetime.now()}')
     balance = client.getBalance()
     rounding_table = get_rounding_table(client)
     usd_balance = Decimal(balance['usd_balance'])
@@ -83,12 +83,12 @@ def reset_orders(client: BitstampClient, coin_long: str):
             coin = asset.split("_", 1)[0]
             pair = f'{coin}usd'
             coin_balance = Decimal(balance[asset])
-            if coin == coin_long:
+            if pair == coin_long:
                 ticker = client.getHourlyTicker(pair)
                 vwap = Decimal(ticker['vwap'])
                 if usd_balance > 20:
                     # buy it
-                    amount = 500 / vwap if usd_balance > 550 else usd_balance / vwap
+                    amount = 500 / vwap if usd_balance > 550 else usd_balance * Decimal(0.99) / vwap
                     amount = round(amount, rounding_table[pair])
                     bitstamp_client.buyLimit(pair, vwap, amount)
             elif coin_balance > 0:
@@ -115,6 +115,7 @@ bitstamp_client = BitstampClient()
 
 last = datetime.now()
 coin_of_the_week = evaluate_coin_of_the_week(bitstamp_client)
+reset_orders(bitstamp_client, coin_of_the_week)
 
 while running:
     now = datetime.now()
@@ -129,6 +130,6 @@ while running:
         last = now
 
     except Exception:
-        log.exception()
+        log.exception("Exception occurred")
 
     sleep(1)
