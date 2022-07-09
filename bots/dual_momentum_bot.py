@@ -85,20 +85,24 @@ def reset_orders(client: BitstampClient, coin_long: str):
             coin_balance = Decimal(balance[asset])
             if pair == coin_long:
                 ticker = client.getHourlyTicker(pair)
-                vwap = Decimal(ticker['vwap'])
+                price = Decimal(ticker['vwap'])
+                if price == 0:
+                    price = (Decimal(ticker['ask']) + Decimal(ticker['bid'])) / 2
                 if usd_balance > 20:
                     # buy it
-                    amount = 500 / vwap if usd_balance > 550 else usd_balance * Decimal(0.99) / vwap
+                    amount = 500 / price if usd_balance > 550 else usd_balance * Decimal(0.99) / price
                     amount = round(amount, rounding_table[pair])
-                    bitstamp_client.buyLimit(pair, vwap, amount)
+                    bitstamp_client.buyLimit(pair, price, amount)
             elif coin_balance > 0:
                 ticker = client.getHourlyTicker(pair)
-                vwap = Decimal(ticker['vwap'])
-                if coin_balance * vwap > 15:
+                price = Decimal(ticker['vwap'])
+                if price == 0:
+                    price = (Decimal(ticker['ask']) + Decimal(ticker['bid'])) / 2
+                if coin_balance * price > 15:
                     # sell it
-                    amount = 500 / vwap if coin_balance * vwap > 550 else coin_balance
+                    amount = 500 / price if coin_balance * price > 550 else coin_balance
                     amount = round(amount, rounding_table[pair])
-                    bitstamp_client.sellLimit(pair, vwap, amount)
+                    bitstamp_client.sellLimit(pair, price, amount)
 
     log.info('Orders reset done')
 
