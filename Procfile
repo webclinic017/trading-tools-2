@@ -1,0 +1,1 @@
+worker: python bots/dual_momentum_bot.py
