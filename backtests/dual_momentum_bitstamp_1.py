@@ -27,6 +27,7 @@ class DualMomentumBitstamp1(BaseCommand):
             volume = df['volume'].resample(tf).sum()
             full = pandas.merge(ohlc, volume, left_index=True, right_index=True)
             full['volume_avg'] = full.volume.rolling(4).mean()
+            full['volume_roc'] = full.volume_avg.pct_change(periods=1)
             full['roc'] = full.close.pct_change(periods=4)
             full['std'] = full.close.rolling(26).std()
             full['std_avg'] = full.close.rolling(26).mean()
@@ -137,8 +138,9 @@ class DualMomentumBitstamp1(BaseCommand):
                 std_max_vol = data[max_volume_pair].loc[index]['std_pct']
                 if index in data[pair].index:
                     roc = data[pair].loc[index]['roc']
+                    volume_roc = data[pair].loc[index]['volume_roc']
                     std = data[pair].loc[index]['std_pct']
-                    if std <= std_max_vol * 1.05 and roc > 0.01 and roc > long_roc:
+                    if std <= std_max_vol * 1.05 and roc > 0.01 and roc > long_roc and volume_roc > 0:
                         long_roc = roc
                         long = pair
 

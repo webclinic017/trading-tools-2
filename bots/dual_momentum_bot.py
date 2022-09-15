@@ -36,6 +36,7 @@ def evaluate_coin_of_the_week(client: BitstampClient) -> str:
             df = df[df.index <= np.datetime64('today') - np.timedelta64(7, 'D')]
             df['volume_avg'] = df.volume.rolling(4).mean()
             df['roc'] = df.close.pct_change(periods=4)
+            df['volume_roc'] = df.volume_avg.pct_change(periods=1)
             df['std'] = df.close.rolling(26).std()
             df['std_avg'] = df.close.rolling(26).mean()
             df['std_pct'] = df['std'] / df['std_avg']
@@ -62,8 +63,9 @@ def evaluate_coin_of_the_week(client: BitstampClient) -> str:
     long_roc = -1
     for pair in data:
         roc = data[pair].iloc[-1]['roc']
+        volume_roc = data[pair].iloc[-1]['volume_roc']
         std = data[pair].iloc[-1]['std_pct']
-        if std <= std_max_vol * 1.05 and roc > 0.01 and roc > long_roc:
+        if std <= std_max_vol * 1.05 and roc > 0.01 and roc > long_roc and volume_roc > 0:
             long_roc = roc
             long = pair
 
